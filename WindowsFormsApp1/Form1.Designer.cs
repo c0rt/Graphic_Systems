@@ -37,6 +37,8 @@
             this.label4 = new System.Windows.Forms.Label();
             this.trackBarAngleZ = new System.Windows.Forms.TrackBar();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.label10 = new System.Windows.Forms.Label();
+            this.label9 = new System.Windows.Forms.Label();
             this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.panel2 = new System.Windows.Forms.Panel();
             this.comboBox2 = new System.Windows.Forms.ComboBox();
@@ -63,8 +65,10 @@
             // 
             // pictureBox1
             // 
+            this.pictureBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.pictureBox1.BackColor = System.Drawing.SystemColors.Control;
-            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Left;
             this.pictureBox1.Location = new System.Drawing.Point(0, 0);
             this.pictureBox1.Name = "pictureBox1";
             this.pictureBox1.Size = new System.Drawing.Size(560, 561);
@@ -75,9 +79,11 @@
             // 
             this.trackBarAngleX.Location = new System.Drawing.Point(3, 33);
             this.trackBarAngleX.Maximum = 360;
+            this.trackBarAngleX.Minimum = -360;
             this.trackBarAngleX.Name = "trackBarAngleX";
             this.trackBarAngleX.Size = new System.Drawing.Size(231, 45);
             this.trackBarAngleX.TabIndex = 1;
+            this.trackBarAngleX.TickFrequency = 90;
             this.trackBarAngleX.ValueChanged += new System.EventHandler(this.trackBarRotate_ValueChanged);
             // 
             // label1
@@ -93,9 +99,11 @@
             // 
             this.trackBarAngleY.Location = new System.Drawing.Point(3, 97);
             this.trackBarAngleY.Maximum = 360;
+            this.trackBarAngleY.Minimum = -360;
             this.trackBarAngleY.Name = "trackBarAngleY";
             this.trackBarAngleY.Size = new System.Drawing.Size(231, 45);
             this.trackBarAngleY.TabIndex = 3;
+            this.trackBarAngleY.TickFrequency = 90;
             this.trackBarAngleY.ValueChanged += new System.EventHandler(this.trackBarRotate_ValueChanged);
             // 
             // label2
@@ -130,13 +138,18 @@
             // 
             this.trackBarAngleZ.Location = new System.Drawing.Point(3, 161);
             this.trackBarAngleZ.Maximum = 360;
+            this.trackBarAngleZ.Minimum = -360;
             this.trackBarAngleZ.Name = "trackBarAngleZ";
             this.trackBarAngleZ.Size = new System.Drawing.Size(231, 45);
             this.trackBarAngleZ.TabIndex = 7;
+            this.trackBarAngleZ.TickFrequency = 90;
             this.trackBarAngleZ.ValueChanged += new System.EventHandler(this.trackBarRotate_ValueChanged);
             // 
             // panel1
             // 
+            this.panel1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.panel1.Controls.Add(this.label10);
+            this.panel1.Controls.Add(this.label9);
             this.panel1.Controls.Add(this.checkBox1);
             this.panel1.Controls.Add(this.trackBarAngleX);
             this.panel1.Controls.Add(this.trackBarAngleZ);
@@ -149,6 +162,24 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(240, 234);
             this.panel1.TabIndex = 8;
+            // 
+            // label10
+            // 
+            this.label10.AutoSize = true;
+            this.label10.Location = new System.Drawing.Point(203, 17);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(25, 13);
+            this.label10.TabIndex = 10;
+            this.label10.Text = "360";
+            // 
+            // label9
+            // 
+            this.label9.AutoSize = true;
+            this.label9.Location = new System.Drawing.Point(6, 17);
+            this.label9.Name = "label9";
+            this.label9.Size = new System.Drawing.Size(28, 13);
+            this.label9.TabIndex = 9;
+            this.label9.Text = "-360";
             // 
             // checkBox1
             // 
@@ -163,6 +194,7 @@
             // 
             // panel2
             // 
+            this.panel2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.panel2.Controls.Add(this.comboBox2);
             this.panel2.Controls.Add(this.label5);
             this.panel2.Controls.Add(this.comboBox1);
@@ -212,6 +244,7 @@
             // 
             // panel3
             // 
+            this.panel3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.panel3.Controls.Add(this.trackBarMoveX);
             this.panel3.Controls.Add(this.trackBarMoveZ);
             this.panel3.Controls.Add(this.label6);
@@ -232,16 +265,18 @@
             this.trackBarMoveX.Name = "trackBarMoveX";
             this.trackBarMoveX.Size = new System.Drawing.Size(231, 45);
             this.trackBarMoveX.TabIndex = 1;
+            this.trackBarMoveX.TickFrequency = 200;
             this.trackBarMoveX.ValueChanged += new System.EventHandler(this.trackBarTransfer_ValueChanged);
             // 
             // trackBarMoveZ
             // 
             this.trackBarMoveZ.Location = new System.Drawing.Point(6, 146);
-            this.trackBarMoveZ.Maximum = 300;
-            this.trackBarMoveZ.Minimum = -300;
+            this.trackBarMoveZ.Maximum = 500;
+            this.trackBarMoveZ.Minimum = -500;
             this.trackBarMoveZ.Name = "trackBarMoveZ";
             this.trackBarMoveZ.Size = new System.Drawing.Size(231, 45);
             this.trackBarMoveZ.TabIndex = 7;
+            this.trackBarMoveZ.TickFrequency = 100;
             this.trackBarMoveZ.ValueChanged += new System.EventHandler(this.trackBarTransfer_ValueChanged);
             // 
             // label6
@@ -256,11 +291,12 @@
             // trackBarMoveY
             // 
             this.trackBarMoveY.Location = new System.Drawing.Point(6, 83);
-            this.trackBarMoveY.Maximum = 300;
-            this.trackBarMoveY.Minimum = -300;
+            this.trackBarMoveY.Maximum = 500;
+            this.trackBarMoveY.Minimum = -500;
             this.trackBarMoveY.Name = "trackBarMoveY";
             this.trackBarMoveY.Size = new System.Drawing.Size(231, 45);
             this.trackBarMoveY.TabIndex = 3;
+            this.trackBarMoveY.TickFrequency = 100;
             this.trackBarMoveY.ValueChanged += new System.EventHandler(this.trackBarTransfer_ValueChanged);
             // 
             // label7
@@ -290,9 +326,11 @@
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.pictureBox1);
+            this.MinimumSize = new System.Drawing.Size(600, 524);
             this.Name = "Form1";
             this.Text = "Программа - убийца памяти";
             this.Load += new System.EventHandler(this.Form1_Load);
+            this.Resize += new System.EventHandler(this.Form1_Resize);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarAngleX)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarAngleY)).EndInit();
@@ -333,6 +371,8 @@
         private System.Windows.Forms.TrackBar trackBarMoveY;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.Label label8;
+        private System.Windows.Forms.Label label10;
+        private System.Windows.Forms.Label label9;
     }
 }
 

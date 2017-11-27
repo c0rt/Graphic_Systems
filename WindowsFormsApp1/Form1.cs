@@ -25,7 +25,7 @@ namespace WindowsFormsApp1
         {
             if (!checkBox1.Checked)
                 figure.RotateFigure(trackBarAngleX.Value, trackBarAngleY.Value, trackBarAngleZ.Value);
-            figure.ScaleFigure(e.Delta);
+            figure.Scale(e.Delta);
             figure.MoveFigure(trackBarMoveX.Value, trackBarMoveY.Value, trackBarMoveZ.Value);
             if (checkBox1.Checked)
                 figure.RotateFigure(trackBarAngleX.Value, trackBarAngleY.Value, trackBarAngleZ.Value);
@@ -43,7 +43,23 @@ namespace WindowsFormsApp1
             trackBarAngleX.Value = 0;
             trackBarAngleY.Value = 0;
             trackBarAngleZ.Value = 0;
-            figure.ScaleFigure(0);
+            figure.Scale(0);
+            if (comboBox1.Text == "Параллельная")
+                figure.DrawParallel();
+            else
+                figure.DrawPerspective();
+        }
+
+        private void Form1_Resize(object sender, EventArgs e)
+        {
+            figure.defTranslationX = pictureBox1.Width / 2;
+            figure.defTranslationY = pictureBox1.Height / 2;
+            if (!checkBox1.Checked)
+                figure.RotateFigure(trackBarAngleX.Value, trackBarAngleY.Value, trackBarAngleZ.Value);
+            figure.Scale(0);
+            figure.MoveFigure(trackBarMoveX.Value, trackBarMoveY.Value, trackBarMoveZ.Value);
+            if (checkBox1.Checked)
+                figure.RotateFigure(trackBarAngleX.Value, trackBarAngleY.Value, trackBarAngleZ.Value);
             if (comboBox1.Text == "Параллельная")
                 figure.DrawParallel();
             else
@@ -54,7 +70,7 @@ namespace WindowsFormsApp1
         {
             if (!checkBox1.Checked)
                 figure.RotateFigure(trackBarAngleX.Value, trackBarAngleY.Value, trackBarAngleZ.Value);
-            figure.ScaleFigure(0);
+            figure.Scale(0);
             figure.MoveFigure(trackBarMoveX.Value, trackBarMoveY.Value, trackBarMoveZ.Value);
             if (checkBox1.Checked)
                 figure.RotateFigure(trackBarAngleX.Value, trackBarAngleY.Value, trackBarAngleZ.Value);
@@ -68,7 +84,7 @@ namespace WindowsFormsApp1
         {
             if (!checkBox1.Checked)
                 figure.RotateFigure(trackBarAngleX.Value, trackBarAngleY.Value, trackBarAngleZ.Value);
-            figure.ScaleFigure(0);
+            figure.Scale(0);
             figure.MoveFigure(trackBarMoveX.Value, trackBarMoveY.Value, trackBarMoveZ.Value);
             if (checkBox1.Checked)
                 figure.RotateFigure(trackBarAngleX.Value, trackBarAngleY.Value, trackBarAngleZ.Value);
@@ -118,7 +134,7 @@ namespace WindowsFormsApp1
             /*trackBarAngleX.Value = 0;
             trackBarAngleY.Value = 0;
             trackBarAngleZ.Value = 0;*/
-            figure.ScaleFigure(0);
+            figure.Scale(0);
             //figure.DrawFigurePerspective();
         }
     }
