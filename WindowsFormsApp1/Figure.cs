@@ -19,6 +19,8 @@ namespace WindowsFormsApp1
             public int[] p;
         };
 
+        private Vector3D light_dir = new Vector3D(0, 0, 1);
+
         private StreamReader reader;
         private int countPoints, countEdges, countFaces;
         private Point3D[] points, pointsToDraw;
@@ -35,6 +37,8 @@ namespace WindowsFormsApp1
 
         private Matrix3D resultTransformMatrix;
 
+
+        private static double min = Double.PositiveInfinity, max = Double.NegativeInfinity;
         public Figure(PictureBox newPicBox)
         {
             try
@@ -100,48 +104,59 @@ namespace WindowsFormsApp1
                 MessageBox.Show(e.Message);
             }
         }
-        private void CheckFace(Face face)
+        private void CheckFace(Face face, ref Bitmap bmp, Color color)
         {
-            Point3D t0 = pointsToDraw[face.p[0]], t1 = pointsToDraw[face.p[1]], t2 = pointsToDraw[face.p[2]];
+            Point3D[] t = new Point3D[face.p.Length];
+            for (int i = 0; i < face.p.Length; i++)
+            {
+                t[i] = pointsToDraw[face.p[i]];
+            }
 
-            if (t0.Y == t1.Y && t0.Y == t2.Y) return; // отсеиваем дегенеративные треугольники
-            if (t0.Y > t1.Y) Swap(ref t0, ref t1);
-            if (t0.Y > t2.Y) Swap(ref t0, ref t2);
-            if (t1.Y > t2.Y) Swap(ref t1, ref t2);
+            if (t[0].Y == t[1].Y && t[0].Y == t[2].Y) return; // отсеиваем дегенеративные треугольники
+            if (t[0].Y > t[1].Y) Swap(ref t[0], ref t[1]);
+            if (t[0].Y > t[2].Y) Swap(ref t[0], ref t[2]);
+            if (t[1].Y > t[2].Y) Swap(ref t[1], ref t[2]);
             
-            int total_height = (int)(t2.Y - t0.Y);
+            int total_height = (int)(t[2].Y - t[0].Y);
             for (int i = 0; i < total_height; i++)
             {
-                bool second_half = i > t1.Y - t0.Y || t1.Y == t0.Y;
-                int segment_height = second_half ? (int)(t2.Y - t1.Y) : (int)(t1.Y - t0.Y);
+                bool second_half = i > t[1].Y - t[0].Y || t[1].Y == t[0].Y;
+                int segment_height = second_half ? (int)Math.Round(t[2].Y - t[1].Y) : (int)Math.Round(t[1].Y - t[0].Y);
                 float alpha = (float)i / total_height;
-                float beta = (float)(i - (second_half ? t1.Y - t0.Y : 0)) / segment_height; //тут может быть деление на 0
+                float beta = (float)(i - (second_half ? t[1].Y - t[0].Y : 0)) / segment_height; //тут может быть деление на 0
 
-                Point3D A = t0 + (t2 - t0) * alpha;
-                Point3D B = second_half ? t1 + (t2 - t1) * beta : t0 + (t1 - t0) * beta;
+                Point3D A = t[0] + (t[2] - t[0]) * alpha;
+                Point3D B = second_half ? t[1] + (t[2] - t[1]) * beta : t[0] + (t[1] - t[0]) * beta;
 
                 if (A.X > B.X)
                     Swap(ref A, ref B);
                 try
                 {
-                    for (int j = (int)A.X; j <= B.X; j++)
+                    for (int j = (int)Math.Round(A.X); j <= Math.Round(B.X); j++)
                     {
                         float phi = B.X == A.X ? 1 : (float)(j - A.X) / (float)(B.X - A.X);
                         Point3D P = A + (B - A) * phi;
 
-                        if (zbuffer[(int)(P.X + defTranslationX), (int)(P.Y + defTranslationY)] < P.Z)
+                        int newCoordX = (int)Math.Round(P.X + defTranslationX);
+                        int newCoordY = (int)Math.Round(P.Y + defTranslationY);
+
+                        if (zbuffer[newCoordX, newCoordY] < P.Z)
                         {
-                            zbuffer[(int)(P.X + defTranslationX), (int)(P.Y + defTranslationY)] = P.Z;
+                            zbuffer[newCoordX, newCoordY] = P.Z;
+                            bmp.SetPixel(newCoordX, newCoordY, color);
+                            if (P.Z > max && !Double.IsInfinity(P.Z))
+                                max = P.Z;
+                            if (P.Z < min && !Double.IsInfinity( P.Z))
+                                min = P.Z;
                         }
                     }
                 }
                 catch (Exception e)
                 {
-
+                    MessageBox.Show("Проблема в заполнении zbuffer:\n" + e.Message);
                 }
             }
         }
-
         static void Swap<T>(ref T lhs, ref  T rhs)
         {
             T temp;
@@ -149,95 +164,6 @@ namespace WindowsFormsApp1
             lhs = rhs;
             rhs = temp;
         }
-        /*private void PutTriangle(Face face)
-        {
-            int ymax, ymin, ysc, e1, e, i;
-            int[] x = new int [3], y = new int[3];
-            //Заносим x,y из face в массивы для последующей работы с ними
-            for (i = 0; i < 3; i++)
-            {
-                x[i] = (int)pointsToDraw[face.p[i]].X;
-                y[i] = (int)pointsToDraw[face.p[i]].Y;
-            }
-               
-            
-            //Определяем максимальный и минимальный y
-            ymax = ymin = y[0];
-
-            if (ymax < y[1])
-                ymax = y[1];
-            else if (ymin > y[1])
-                ymin = y[1];
-
-            if (ymax < y[2])
-                ymax = y[2];
-            else if (ymin > y[2])
-                ymin = y[2];
-
-            ymin = (ymin < 0) ? 0 : ymin;
-            ymax = (ymax < pb.Height) ? ymax : pb.Height;
-            bool ne;
-            int x1, x2, xsc1, xsc2;
-            double z1, z2, tc, z;
-            //Следующий участок кода перебирает все строки сцены
-            //и определяет глубину каждого пикселя
-            //для соответствующего треугольника
-            for (ysc = ymin; ysc < ymax; ysc++)
-            {
-                ne = false;
-                for (e = 0; e < 3; e++)
-                {
-                    e1 = e + 1;
-
-                    if (e1 == 3)
-                        e1 = 0;
-
-                    if (y[e] < y[e1])
-                    {
-                        if (y[e1] <= ysc || ysc < y[e]) continue;
-                    }
-                    else if (y[e] > y[e1])
-                    {
-                        if (y[e1] > ysc || ysc >= y[e]) continue;
-                    }
-                    else continue;
-
-                    tc = (double)(y[e] - ysc) / (y[e] - y[e1]);
-                    if (ne)
-                    {
-                        x2 = x[e] + (int)(tc * (x[e1] - x[e]));
-                        z2 = pointsToDraw[face.p[e]].Z + tc * (pointsToDraw[face.p[e1]].Z - pointsToDraw[face.p[e]].Z);
-                    }
-
-                    else
-                    {
-                        x1 = x[e] + (int)(tc * (x[e1] - x[e]));
-                        z1 = pointsToDraw[face.p[e]].Z + tc * (pointsToDraw[face.p[e1]].Z - pointsToDraw[face.p[e]].Z);
-                        ne = true;
-                    }
-                }
-                if (x2 < x1) {
-                    e = x1;
-                    x1 = x2;
-                    x2 = e;
-                    tc = z1;
-                    z1 = z2;
-                    z2 = tc;
-                }
-                xsc1 = (x1 < 0) ? 0 : x1;
-                xsc2 = (x2 < sX) ? x2 : sX;
-                for (int xsc = xsc1; xsc < xsc2; xsc++)
-                {
-                    tc = double(x1 - xsc) / (x1 - x2);
-                    z = z1 + tc * (z2 - z1);
-                    //Если полученная глубина пиксела меньше той,
-                    //что находится в Z-Буфере - заменяем храняшуюся на новую.
-                    if (z < (*(buff[ysc] + xsc)).z)
-                        (*(buff[ysc] + xsc)).color = face.color,
-				(*(buff[ysc] + xsc)).z = z;
-                }
-            }
-        }*/
         private void output()
         {
             String str;
@@ -280,10 +206,10 @@ namespace WindowsFormsApp1
             for (int t = 0; t < pb.Height; t++)
                 for (int j = 0; j < pb.Width; j++)
                     zbuffer[t, j] = Double.NegativeInfinity;
-            foreach (Face face in faces)
+            /*foreach (Face face in faces)
             {
                 CheckFace(face);
-            }
+            }*/
             //output();
 
             // Рисуем ребра
@@ -308,35 +234,55 @@ namespace WindowsFormsApp1
         }
         public void DrawParallel()
         {
+            min = Double.PositiveInfinity; max = Double.NegativeInfinity;
             resultTransformMatrix.Transform(pointsToDraw);
             Bitmap bmp = new Bitmap(pb.Width, pb.Height);
             Graphics gr = Graphics.FromImage(bmp);
-            // Рисуем ребра
-            for (int i = 0; i < countEdges; ++i)
-                gr.DrawLine(new Pen(Color.Red, 1),
-                            (float)pointsToDraw[edges[i].start].X + (float)defTranslationX,
-                            (float)pointsToDraw[edges[i].start].Y + (float)defTranslationY,
-                            (float)pointsToDraw[edges[i].end].X + (float)defTranslationX,
-                            (float)pointsToDraw[edges[i].end].Y + (float)defTranslationY);
+            
 
             for (int t = 0; t < pb.Height; t++)
                 for (int j = 0; j < pb.Width; j++)
                     zbuffer[t, j] = Double.NegativeInfinity;
-            /*foreach (Face face in faces)
+
+            foreach (Face face in faces)
             {
-                CheckFace(face);
-            }*/
-            CheckFace(faces[0]);
-            //output();
-            for (int y = 0; y < pb.Height; y++)
+                Point3D[] t = new Point3D[face.p.Length];
+                for (int i = 0; i < face.p.Length; i++)
+                {
+                    t[i] = pointsToDraw[face.p[i]];
+                }
+                Vector3D n = Vector3D.CrossProduct((t[2] - t[0]),  (t[1] - t[0]));
+                n.Normalize();
+                double intensity = Vector3D.DotProduct(n, light_dir);
+
+                if (intensity > 0)
+                {
+                    CheckFace(face, ref bmp, Color.FromArgb(255, (int)(intensity * 255), (int)(intensity * 255), (int)(intensity * 255)));
+                }
+            }
+            
+            max += Math.Abs(min);
+            /*for (int y = 0; y < pb.Height; y++)
             {
                 for (int z = 0; z < pb.Width; z++)
                 {
                     if (zbuffer[y, z] != Double.NegativeInfinity)
-                        gr.DrawRectangle(new Pen(Color.Red, 1), y, z, 1, 1);
-                }
-            }
+                    {
+                        int temp = (int)(zbuffer[y, z]+ Math.Abs(min));
 
+                        bmp.SetPixel(y, z, Color.FromArgb((int)Math.Round(temp / max * 180)+70, Color.Red));
+                    }
+                }
+            }*/
+
+            
+            // Рисуем ребра
+            /*for (int i = 0; i < countEdges; ++i)
+                gr.DrawLine(new Pen(Color.Red, 1),
+                            (float)pointsToDraw[edges[i].start].X + (float)defTranslationX,
+                            (float)pointsToDraw[edges[i].start].Y + (float)defTranslationY,
+                            (float)pointsToDraw[edges[i].end].X + (float)defTranslationX,
+                            (float)pointsToDraw[edges[i].end].Y + (float)defTranslationY);*/
             pb.Image = bmp;
             gr.Dispose(); //освобождение памяти
 
