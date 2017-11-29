@@ -191,6 +191,22 @@ namespace WindowsFormsApp1
                 outputFile.Close();
             }
         }*/
+        public void ResizeBuffer()
+        {
+            zbuffer = (double[,])ResizeArray(zbuffer, new int[] { pb.Width, pb.Height });
+
+        }
+        private static Array ResizeArray(Array arr, int[] newSizes)
+        {
+            if (newSizes.Length != arr.Rank)
+                throw new ArgumentException("arr must have the same number of dimensions " +
+                                            "as there are elements in newSizes", "newSizes");
+
+            var temp = Array.CreateInstance(arr.GetType().GetElementType(), newSizes);
+            int length = arr.Length <= temp.Length ? arr.Length : temp.Length;
+            Array.ConstrainedCopy(arr, 0, temp, 0, length);
+            return temp;
+        }
         public void DrawPerspective()
         {
 
@@ -269,21 +285,6 @@ namespace WindowsFormsApp1
                     DrawFace(face, ref bmp, Color.FromArgb(255, (int)(intensity * 255), (int)(intensity * 255), (int)(intensity * 255)));
                 }
             }
-
-            //max += Math.Abs(min);
-            /*for (int y = 0; y < pb.Height; y++)
-            {
-                for (int z = 0; z < pb.Width; z++)
-                {
-                    if (zbuffer[y, z] != Double.NegativeInfinity)
-                    {
-                        int temp = (int)(zbuffer[y, z]+ Math.Abs(min));
-
-                        bmp.SetPixel(y, z, Color.FromArgb((int)Math.Round(temp / max * 180)+70, Color.Red));
-                    }
-                }
-            }*/
-
 
             // Рисуем ребра
             /*for (int i = 0; i < countEdges; ++i)

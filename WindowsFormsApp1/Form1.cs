@@ -52,6 +52,7 @@ namespace WindowsFormsApp1
 
         private void Form1_Resize(object sender, EventArgs e)
         {
+            figure.ResizeBuffer();
             figure.defTranslationX = pictureBox1.Width / 2;
             figure.defTranslationY = pictureBox1.Height / 2;
             if (!checkBox1.Checked)

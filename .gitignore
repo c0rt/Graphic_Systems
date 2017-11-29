@@ -19,7 +19,7 @@ x86/
 bld/
 [Oo]bj/
 [Ll]og/
-[De]bug/
+[Dd]ebug/
 ![De]bug/*.txt
 
 # Visual Studio 2015 cache/options directory
