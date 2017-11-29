@@ -37,8 +37,8 @@ namespace WindowsFormsApp1
 
         private Matrix3D resultTransformMatrix;
 
+        //private static double min = Double.PositiveInfinity, max = Double.NegativeInfinity;
 
-        private static double min = Double.PositiveInfinity, max = Double.NegativeInfinity;
         public Figure(PictureBox newPicBox)
         {
             try
@@ -48,7 +48,28 @@ namespace WindowsFormsApp1
                 defTranslationX = pb.Width / 2;
                 defTranslationY = pb.Height / 2;
 
-                reader = new StreamReader(@"Икосаэдр.txt");
+                ReadFromFile(@"Икосаэдр.txt");
+
+                scale = 100;
+                resultTransformMatrix = new Matrix3D();
+                points.CopyTo(pointsToDraw, 0);
+                Scale(0);
+
+                zbuffer = new double[pb.Height, pb.Width];
+                for (int i = 0; i < pb.Height; i++)
+                    for (int j = 0; j < pb.Width; j++)
+                        zbuffer[i, j] = Double.NegativeInfinity;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+        }
+        private void ReadFromFile(String figure)
+        {
+            try
+            {
+                reader = new StreamReader(figure);
                 countPoints = int.Parse(reader.ReadLine());
                 points = new Point3D[countPoints];
                 pointsToDraw = new Point3D[countPoints];
@@ -89,17 +110,8 @@ namespace WindowsFormsApp1
                     i++;
                 }
                 reader.Close();
-                scale = 100;
-                resultTransformMatrix = new Matrix3D();
-                points.CopyTo(pointsToDraw, 0);
-                Scale(0);
-
-                zbuffer = new double[pb.Height, pb.Width];
-                for (i = 0; i < pb.Height; i++)
-                    for (int j = 0; j < pb.Width; j++)
-                        zbuffer[i, j] = Double.NegativeInfinity;
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 MessageBox.Show(e.Message);
             }
@@ -144,10 +156,10 @@ namespace WindowsFormsApp1
                         {
                             zbuffer[newCoordX, newCoordY] = P.Z;
                             bmp.SetPixel(newCoordX, newCoordY, color);
-                            if (P.Z > max && !Double.IsInfinity(P.Z))
+                            /*if (P.Z > max && !Double.IsInfinity(P.Z))
                                 max = P.Z;
                             if (P.Z < min && !Double.IsInfinity( P.Z))
-                                min = P.Z;
+                                min = P.Z;*/
                         }
                     }
                 }
@@ -164,7 +176,7 @@ namespace WindowsFormsApp1
             lhs = rhs;
             rhs = temp;
         }
-        private void output()
+        /*private void output()
         {
             String str;
             using (StreamWriter outputFile = new StreamWriter(@"WriteLines.txt"))
@@ -180,7 +192,7 @@ namespace WindowsFormsApp1
                 }
                 outputFile.Close();
             }
-        }
+        }*/
         public void DrawPerspective()
         {
 
@@ -234,7 +246,7 @@ namespace WindowsFormsApp1
         }
         public void DrawParallel()
         {
-            min = Double.PositiveInfinity; max = Double.NegativeInfinity;
+            //min = Double.PositiveInfinity; max = Double.NegativeInfinity;
             resultTransformMatrix.Transform(pointsToDraw);
             Bitmap bmp = new Bitmap(pb.Width, pb.Height);
             Graphics gr = Graphics.FromImage(bmp);
@@ -261,7 +273,7 @@ namespace WindowsFormsApp1
                 }
             }
             
-            max += Math.Abs(min);
+            //max += Math.Abs(min);
             /*for (int y = 0; y < pb.Height; y++)
             {
                 for (int z = 0; z < pb.Width; z++)
@@ -289,32 +301,6 @@ namespace WindowsFormsApp1
             points.CopyTo(pointsToDraw, 0);
             resultTransformMatrix = new Matrix3D();
         }
-        /*public void DrawFigurePerspective()
-        {
-            Bitmap bmp = new Bitmap(pb.Width, pb.Height);
-            Graphics gr = Graphics.FromImage(bmp);
-            // Получаем проекцию точек
-            for (int i = 0; i < countPoints; i++)
-            {
-                // Получение координат проекции
-                double xProj = focus / (focus + points[i].X) * points[i].Y;
-                double yProj = focus / (focus + points[i].X) * points[i].Z;
-
-                // Применение масштаба и смещения
-                xProj = xProj + defTranslationX;
-                yProj = yProj + defTranslationY;
-
-                // Запись в массив проекции
-                projPoints[i].X = (float)xProj;
-                projPoints[i].Y = (float)yProj;
-            }
-            // Рисуем ребра
-            for (int i = 0; i < countEdges; ++i)
-                gr.DrawLine(new Pen(Color.Red, 1), projPoints[edges[i].start].X, projPoints[edges[i].start].Y,
-                    projPoints[edges[i].end].X, projPoints[edges[i].end].Y);
-            pb.Image = bmp;
-            gr.Dispose(); //освобождение памяти
-        }*/
         public void RotateFigure(double angleX, double angleY, double angleZ)
         {
             angleX *= Math.PI / 180;
@@ -366,45 +352,7 @@ namespace WindowsFormsApp1
             try
             {
                 nameFigure += ".txt";
-                reader = new StreamReader(nameFigure);
-                countPoints = int.Parse(reader.ReadLine());
-                points = new Point3D[countPoints];
-                pointsToDraw = new Point3D[countPoints];
-                projPoints = new PointF[countPoints];
-
-                int i = 0;
-                while (i != countPoints)
-                {
-                    var line = reader.ReadLine();
-                    var tempVals = line.Split().Select(Convert.ToDouble).ToList();
-                    points[i].X = tempVals[0];
-                    points[i].Y = tempVals[1];
-                    points[i].Z = tempVals[2];
-                    i++;
-                }
-                i = 0;
-                countEdges = int.Parse(reader.ReadLine());
-                edges = new Edge[countEdges];
-                while (i != countEdges)
-                {
-                    var line = reader.ReadLine();
-                    var tempVals = line.Split().Select(Convert.ToDouble).ToList();
-                    edges[i].start = (int)tempVals[0];
-                    edges[i].end = (int)tempVals[1];
-                    i++;
-                }
-                countFaces = int.Parse(reader.ReadLine());
-                faces = new Face[countFaces];
-                while (i != countFaces)
-                {
-                    var line = reader.ReadLine();
-                    var tempVals = line.Split().Select(Convert.ToDouble).ToList();
-                    faces[i].p[0] = (int)tempVals[0];
-                    faces[i].p[1] = (int)tempVals[1];
-                    faces[i].p[2] = (int)tempVals[2];
-                    i++;
-                }
-                reader.Close();
+                ReadFromFile(nameFigure);
                 scale = 100;
                 resultTransformMatrix = new Matrix3D();
                 points.CopyTo(pointsToDraw, 0);
@@ -416,64 +364,5 @@ namespace WindowsFormsApp1
                 Scale(0);
             }
         }
-        /*public void ChangeScale(int approximation)
-        {
-            if (approximation > 0)
-                scale += 10;
-            else
-                if (scale > minScale)
-                scale -= 10;
-            DrawFigure(points);
-        }*/
-
-        /*public void RotateFigureX(double value)
-        {
-            deltaAngleX = value - currentAngleX;
-            deltaAngleX *= Math.PI / 180;
-            for (int i = 0; i < countPoints; i++)
-            {
-                double x = points[i].x * 1 + points[i].y * 0 + points[i].z * 0;
-                double y = points[i].x * 0 + points[i].y * Math.Cos(deltaAngleX) + points[i].z * -Math.Sin(deltaAngleX);
-                double z = points[i].x * 0 + points[i].y * Math.Sin(deltaAngleX) + points[i].z * Math.Cos(deltaAngleX);
-                points[i].x = x;
-                points[i].y = y;
-                points[i].z = z;
-            }
-            DrawFigure();
-            currentAngleX = value;
-
-        }*/
-        /*public void RotateFigureY(int value)
-        {
-            deltaAngleY = value - currentAngleY;
-            deltaAngleY *= Math.PI / 180;
-            for (int i = 0; i < countPoints; i++)
-            {
-                double x = points[i].x * Math.Cos(deltaAngleY) + points[i].y * 0 + points[i].z * Math.Sin(deltaAngleY);
-                double y = points[i].x * 0 + points[i].y * 1 + points[i].z * 0;
-                double z = points[i].x * -Math.Sin(deltaAngleY) + points[i].y * 0 + points[i].z * Math.Cos(deltaAngleY);
-                points[i].x = x;
-                points[i].y = y;
-                points[i].z = z;
-            }
-            DrawFigure();
-            currentAngleY = value;
-        }*/
-        /*public void RotateFigureZ(int value)
-        {
-            deltaAngleZ = value - currentAngleZ;
-            deltaAngleZ *= Math.PI / 180;
-            for (int i = 0; i < countPoints; i++)
-            {
-                double x = points[i].x * Math.Cos(deltaAngleZ) + points[i].y * -Math.Sin(deltaAngleZ) + points[i].z * 0;
-                double y = points[i].x * Math.Sin(deltaAngleZ) + points[i].y * Math.Cos(deltaAngleZ) + points[i].z * 0;
-                double z = points[i].x * 0 + points[i].y * 0 + points[i].z * 1;
-                points[i].x = x;
-                points[i].y = y;
-                points[i].z = z;
-            }
-            DrawFigure();
-            currentAngleZ = value;
-        }*/
     }
 }
