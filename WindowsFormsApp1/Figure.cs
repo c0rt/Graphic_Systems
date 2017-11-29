@@ -102,90 +102,47 @@ namespace WindowsFormsApp1
         }
         private void CheckFace(Face face)
         {
-            double a = +pointsToDraw[face.p[0]].Y * pointsToDraw[face.p[1]].Z
-                        - pointsToDraw[face.p[0]].Y * pointsToDraw[face.p[2]].Z
-                        - pointsToDraw[face.p[1]].Y * pointsToDraw[face.p[0]].Z
-                        + pointsToDraw[face.p[2]].Y * pointsToDraw[face.p[0]].Z
-                        + pointsToDraw[face.p[1]].Y * pointsToDraw[face.p[2]].Z
-                        - pointsToDraw[face.p[2]].Y * pointsToDraw[face.p[1]].Z;
+            Point3D t0 = pointsToDraw[face.p[0]], t1 = pointsToDraw[face.p[1]], t2 = pointsToDraw[face.p[2]];
 
-            double b = -pointsToDraw[face.p[0]].X * pointsToDraw[face.p[1]].Z
-                        + pointsToDraw[face.p[0]].X * pointsToDraw[face.p[2]].Z
-                        + pointsToDraw[face.p[1]].X * pointsToDraw[face.p[0]].Z
-                        - pointsToDraw[face.p[2]].X * pointsToDraw[face.p[0]].Z
-                        - pointsToDraw[face.p[1]].X * pointsToDraw[face.p[2]].Z
-                        + pointsToDraw[face.p[2]].X * pointsToDraw[face.p[1]].Z;
-
-            double c = +pointsToDraw[face.p[0]].X * pointsToDraw[face.p[1]].Y
-                        - pointsToDraw[face.p[0]].X * pointsToDraw[face.p[2]].Y
-                        - pointsToDraw[face.p[1]].X * pointsToDraw[face.p[0]].Y
-                        + pointsToDraw[face.p[2]].X * pointsToDraw[face.p[0]].Y
-                        + pointsToDraw[face.p[1]].X * pointsToDraw[face.p[2]].Y
-                        - pointsToDraw[face.p[2]].X * pointsToDraw[face.p[1]].Y;
-
-            double d = -pointsToDraw[face.p[0]].X * pointsToDraw[face.p[1]].Y * pointsToDraw[face.p[2]].Z
-                        + pointsToDraw[face.p[0]].X * pointsToDraw[face.p[2]].Y * pointsToDraw[face.p[1]].Z
-                        + pointsToDraw[face.p[1]].X * pointsToDraw[face.p[0]].Y * pointsToDraw[face.p[2]].Z
-                        - pointsToDraw[face.p[2]].X * pointsToDraw[face.p[0]].Y * pointsToDraw[face.p[1]].Z
-                        + pointsToDraw[face.p[1]].X * pointsToDraw[face.p[2]].Y * pointsToDraw[face.p[0]].Z
-                        + pointsToDraw[face.p[2]].X * pointsToDraw[face.p[1]].Y * pointsToDraw[face.p[0]].Z;
-
-            int Ax = (int)projPoints[face.p[2]].X, Ay = (int)projPoints[face.p[2]].Y,
-                Bx = (int)projPoints[face.p[1]].X, By = (int)projPoints[face.p[1]].Y,
-                Cx = (int)projPoints[face.p[0]].X, Cy = (int)projPoints[face.p[0]].Y;
-
-            int[] X = { Ax, Bx, Cx };
-            int[] Y = { Ay, By, Cy };
-
-            for (int i = 0; i < 2; i++)
-                for (int j = 0; j < 2; j++)
-                    if (Y[j] < Y[j + 1])
-                    {
-                        Swap(Y[j + 1], Y[j]);
-                        Swap(X[j + 1], X[j]);
-                    }
-
-            Ay = Y[0]; By = Y[1]; Cy = Y[2];
-            Ax = X[0]; Bx = X[1]; Cx = X[2];
-
-            double x1, x2;
-            for (int sy = Ay; sy <= Cy; sy++)
+            if (t0.Y == t1.Y && t0.Y == t2.Y) return; // отсеиваем дегенеративные треугольники
+            if (t0.Y > t1.Y) Swap(ref t0, ref t1);
+            if (t0.Y > t2.Y) Swap(ref t0, ref t2);
+            if (t1.Y > t2.Y) Swap(ref t1, ref t2);
+            
+            int total_height = (int)(t2.Y - t0.Y);
+            for (int i = 0; i < total_height; i++)
             {
-                //if (Cy - By != 0 && By - Ay != 0 && Cy - Ay != 0)
-                //{
-                if (Cy == Ay)
-                    x1 = Ax;
-                else
-                    x1 = Ax + (sy - Ay) * (Cx - Ax) / (Cy - Ay);
+                bool second_half = i > t1.Y - t0.Y || t1.Y == t0.Y;
+                int segment_height = second_half ? (int)(t2.Y - t1.Y) : (int)(t1.Y - t0.Y);
+                float alpha = (float)i / total_height;
+                float beta = (float)(i - (second_half ? t1.Y - t0.Y : 0)) / segment_height; //тут может быть деление на 0
 
-                if (sy < By)
-                    if (Ay == By)
-                        x2 = Ax;
-                    else
-                        x2 = Ax + (sy - Ay) * (Bx - Ax) / (By - Ay);
-                else
+                Point3D A = t0 + (t2 - t0) * alpha;
+                Point3D B = second_half ? t1 + (t2 - t1) * beta : t0 + (t1 - t0) * beta;
+
+                if (A.X > B.X)
+                    Swap(ref A, ref B);
+                try
                 {
-                    if (Cy == By)
-                        x2 = Bx;
-                    else
-                        x2 = Bx + (sy - By) * (Cx - Bx) / (Cy - By);
-                }
-                if (x1 > x2)
-                    Swap(x1, x2);
-
-                double tempValue;
-                for (int i = (int)x1; i <= x2; i++)
-                {
-                    tempValue = (-d - b * sy - a * i) / c;
-
-                    if (tempValue > zbuffer[i, sy])
+                    for (int j = (int)A.X; j <= B.X; j++)
                     {
-                        zbuffer[i, sy] = tempValue;
+                        float phi = B.X == A.X ? 1 : (float)(j - A.X) / (float)(B.X - A.X);
+                        Point3D P = A + (B - A) * phi;
+
+                        if (zbuffer[(int)(P.X + defTranslationX), (int)(P.Y + defTranslationY)] < P.Z)
+                        {
+                            zbuffer[(int)(P.X + defTranslationX), (int)(P.Y + defTranslationY)] = P.Z;
+                        }
                     }
+                }
+                catch (Exception e)
+                {
+
                 }
             }
         }
-        static void Swap<T>(T lhs, T rhs)
+
+        static void Swap<T>(ref T lhs, ref  T rhs)
         {
             T temp;
             temp = lhs;
@@ -357,10 +314,29 @@ namespace WindowsFormsApp1
             // Рисуем ребра
             for (int i = 0; i < countEdges; ++i)
                 gr.DrawLine(new Pen(Color.Red, 1),
-                            (float)pointsToDraw[edges[i].start].X + (float)defTranslationY,
-                            (float)pointsToDraw[edges[i].start].Y + (float)defTranslationX,
-                            (float)pointsToDraw[edges[i].end].X + (float)defTranslationY,
-                            (float)pointsToDraw[edges[i].end].Y + (float)defTranslationX);
+                            (float)pointsToDraw[edges[i].start].X + (float)defTranslationX,
+                            (float)pointsToDraw[edges[i].start].Y + (float)defTranslationY,
+                            (float)pointsToDraw[edges[i].end].X + (float)defTranslationX,
+                            (float)pointsToDraw[edges[i].end].Y + (float)defTranslationY);
+
+            for (int t = 0; t < pb.Height; t++)
+                for (int j = 0; j < pb.Width; j++)
+                    zbuffer[t, j] = Double.NegativeInfinity;
+            /*foreach (Face face in faces)
+            {
+                CheckFace(face);
+            }*/
+            CheckFace(faces[0]);
+            //output();
+            for (int y = 0; y < pb.Height; y++)
+            {
+                for (int z = 0; z < pb.Width; z++)
+                {
+                    if (zbuffer[y, z] != Double.NegativeInfinity)
+                        gr.DrawRectangle(new Pen(Color.Red, 1), y, z, 1, 1);
+                }
+            }
+
             pb.Image = bmp;
             gr.Dispose(); //освобождение памяти
 
