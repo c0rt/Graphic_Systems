@@ -19,6 +19,8 @@ x86/
 bld/
 [Oo]bj/
 [Ll]og/
+[De]bug/
+![De]bug/*.txt
 
 # Visual Studio 2015 cache/options directory
 .vs/

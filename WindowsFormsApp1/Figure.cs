@@ -55,9 +55,9 @@ namespace WindowsFormsApp1
                 points.CopyTo(pointsToDraw, 0);
                 Scale(0);
 
-                zbuffer = new double[pb.Height, pb.Width];
-                for (int i = 0; i < pb.Height; i++)
-                    for (int j = 0; j < pb.Width; j++)
+                zbuffer = new double[pb.Width, pb.Height];
+                for (int i = 0; i < pb.Width; i++)
+                    for (int j = 0; j < pb.Height; j++)
                         zbuffer[i, j] = Double.NegativeInfinity;
             }
             catch (Exception e)
@@ -111,12 +111,12 @@ namespace WindowsFormsApp1
                 }
                 reader.Close();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 MessageBox.Show(e.Message);
             }
         }
-        private void CheckFace(Face face, ref Bitmap bmp, Color color)
+        private void DrawFace(Face face, ref Bitmap bmp, Color color)
         {
             Point3D[] t = new Point3D[face.p.Length];
             for (int i = 0; i < face.p.Length; i++)
@@ -125,12 +125,12 @@ namespace WindowsFormsApp1
             }
 
             if (t[0].Y == t[1].Y && t[0].Y == t[2].Y) return; // отсеиваем дегенеративные треугольники
-            if (t[0].Y > t[1].Y) Swap(ref t[0], ref t[1]);
+            if (t[0].Y > t[1].Y) Swap(ref t[0], ref t[1]); //сортировка вершин треугольника
             if (t[0].Y > t[2].Y) Swap(ref t[0], ref t[2]);
             if (t[1].Y > t[2].Y) Swap(ref t[1], ref t[2]);
-            
+
             int total_height = (int)(t[2].Y - t[0].Y);
-            for (int i = 0; i < total_height; i++)
+            for (int i = 0; i < total_height; i++) //построчное закрашивание треугольника
             {
                 bool second_half = i > t[1].Y - t[0].Y || t[1].Y == t[0].Y;
                 int segment_height = second_half ? (int)Math.Round(t[2].Y - t[1].Y) : (int)Math.Round(t[1].Y - t[0].Y);
@@ -152,15 +152,13 @@ namespace WindowsFormsApp1
                         int newCoordX = (int)Math.Round(P.X + defTranslationX);
                         int newCoordY = (int)Math.Round(P.Y + defTranslationY);
 
-                        if (zbuffer[newCoordX, newCoordY] < P.Z)
-                        {
-                            zbuffer[newCoordX, newCoordY] = P.Z;
-                            bmp.SetPixel(newCoordX, newCoordY, color);
-                            /*if (P.Z > max && !Double.IsInfinity(P.Z))
-                                max = P.Z;
-                            if (P.Z < min && !Double.IsInfinity( P.Z))
-                                min = P.Z;*/
-                        }
+                        if (0 <= newCoordX && newCoordX < pb.Width &&
+                            0 <= newCoordY && newCoordY < pb.Height)
+                            if (zbuffer[newCoordX, newCoordY] < P.Z)
+                            {
+                                zbuffer[newCoordX, newCoordY] = P.Z;
+                                bmp.SetPixel(newCoordX, newCoordY, color);
+                            }
                     }
                 }
                 catch (Exception e)
@@ -169,7 +167,7 @@ namespace WindowsFormsApp1
                 }
             }
         }
-        static void Swap<T>(ref T lhs, ref  T rhs)
+        static void Swap<T>(ref T lhs, ref T rhs)
         {
             T temp;
             temp = lhs;
@@ -215,8 +213,8 @@ namespace WindowsFormsApp1
                 projPoints[i].X = (float)xProj;
                 projPoints[i].Y = (float)yProj;
             }
-            for (int t = 0; t < pb.Height; t++)
-                for (int j = 0; j < pb.Width; j++)
+            for (int t = 0; t < pb.Width; t++)
+                for (int j = 0; j < pb.Height; j++)
                     zbuffer[t, j] = Double.NegativeInfinity;
             /*foreach (Face face in faces)
             {
@@ -230,9 +228,9 @@ namespace WindowsFormsApp1
                     projPoints[edges[i].start].X, projPoints[edges[i].start].Y,
                     projPoints[edges[i].end].X, projPoints[edges[i].end].Y);
 
-            for (int y = 0; y < pb.Height; y++)
+            for (int y = 0; y < pb.Width; y++)
             {
-                for (int z = 0; z < pb.Width; z++)
+                for (int z = 0; z < pb.Height; z++)
                 {
                     if (zbuffer[y, z] != Double.NegativeInfinity)
                         gr.DrawRectangle(new Pen(Color.Red, 1), y, z, 1, 1);
@@ -246,14 +244,13 @@ namespace WindowsFormsApp1
         }
         public void DrawParallel()
         {
-            //min = Double.PositiveInfinity; max = Double.NegativeInfinity;
             resultTransformMatrix.Transform(pointsToDraw);
             Bitmap bmp = new Bitmap(pb.Width, pb.Height);
             Graphics gr = Graphics.FromImage(bmp);
-            
 
-            for (int t = 0; t < pb.Height; t++)
-                for (int j = 0; j < pb.Width; j++)
+
+            for (int t = 0; t < pb.Width; t++)
+                for (int j = 0; j < pb.Height; j++)
                     zbuffer[t, j] = Double.NegativeInfinity;
 
             foreach (Face face in faces)
@@ -263,16 +260,16 @@ namespace WindowsFormsApp1
                 {
                     t[i] = pointsToDraw[face.p[i]];
                 }
-                Vector3D n = Vector3D.CrossProduct((t[2] - t[0]),  (t[1] - t[0]));
+                Vector3D n = Vector3D.CrossProduct((t[2] - t[0]), (t[1] - t[0]));
                 n.Normalize();
                 double intensity = Vector3D.DotProduct(n, light_dir);
 
                 if (intensity > 0)
                 {
-                    CheckFace(face, ref bmp, Color.FromArgb(255, (int)(intensity * 255), (int)(intensity * 255), (int)(intensity * 255)));
+                    DrawFace(face, ref bmp, Color.FromArgb(255, (int)(intensity * 255), (int)(intensity * 255), (int)(intensity * 255)));
                 }
             }
-            
+
             //max += Math.Abs(min);
             /*for (int y = 0; y < pb.Height; y++)
             {
@@ -287,7 +284,7 @@ namespace WindowsFormsApp1
                 }
             }*/
 
-            
+
             // Рисуем ребра
             /*for (int i = 0; i < countEdges; ++i)
                 gr.DrawLine(new Pen(Color.Red, 1),
