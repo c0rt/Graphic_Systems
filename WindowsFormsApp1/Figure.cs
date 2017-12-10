@@ -28,16 +28,17 @@ namespace WindowsFormsApp1
         private Edge[] edges;
         private Face[] faces;
 
+        private String name;
+
         private const double focus = 2000;
         private const double minScale = 0.1;
-        public double scale, defTranslationX, defTranslationY;
+        public int defTranslationX, defTranslationY;
+        public double scale;
         private PictureBox pb;
 
-        private double[,] zbuffer;
+        private int[,] zbuffer;
 
         private Matrix3D resultTransformMatrix;
-
-        //private static double min = Double.PositiveInfinity, max = Double.NegativeInfinity;
 
         public Figure(PictureBox newPicBox)
         {
@@ -48,17 +49,18 @@ namespace WindowsFormsApp1
                 defTranslationX = pb.Width / 2;
                 defTranslationY = pb.Height / 2;
 
-                ReadFromFile(@"Икосаэдр.txt");
+                name = @"Икосаэдр.txt";
+                ReadFromFile(name);
 
                 scale = 100;
                 resultTransformMatrix = new Matrix3D();
                 points.CopyTo(pointsToDraw, 0);
                 Scale(0);
 
-                zbuffer = new double[pb.Width, pb.Height];
+                zbuffer = new int[pb.Width, pb.Height];
                 for (int i = 0; i < pb.Width; i++)
                     for (int j = 0; j < pb.Height; j++)
-                        zbuffer[i, j] = Double.NegativeInfinity;
+                        zbuffer[i, j] = int.MinValue;
             }
             catch (Exception e)
             {
@@ -69,6 +71,7 @@ namespace WindowsFormsApp1
         {
             try
             {
+                name = figure;
                 reader = new StreamReader(figure);
                 countPoints = int.Parse(reader.ReadLine());
                 points = new Point3D[countPoints];
@@ -96,18 +99,21 @@ namespace WindowsFormsApp1
                     edges[i].end = (int)tempVals[1];
                     i++;
                 }
-                i = 0;
-                countFaces = int.Parse(reader.ReadLine());
-                faces = new Face[countFaces];
-                while (i != countFaces)
+                if(name == @"Икосаэдр.txt")
                 {
-                    var line = reader.ReadLine();
-                    var tempVals = line.Split().Select(Convert.ToDouble).ToList();
-                    faces[i].p = new int[3];
-                    faces[i].p[0] = (int)tempVals[0];
-                    faces[i].p[1] = (int)tempVals[1];
-                    faces[i].p[2] = (int)tempVals[2];
-                    i++;
+                    i = 0;
+                    countFaces = int.Parse(reader.ReadLine());
+                    faces = new Face[countFaces];
+                    while (i != countFaces)
+                    {
+                        var line = reader.ReadLine();
+                        var tempVals = line.Split().Select(Convert.ToDouble).ToList();
+                        faces[i].p = new int[3];
+                        faces[i].p[0] = (int)tempVals[0];
+                        faces[i].p[1] = (int)tempVals[1];
+                        faces[i].p[2] = (int)tempVals[2];
+                        i++;
+                    }
                 }
                 reader.Close();
             }
@@ -116,13 +122,51 @@ namespace WindowsFormsApp1
                 MessageBox.Show(e.Message);
             }
         }
-        private void DrawFace(Face face, ref Bitmap bmp, Color color)
+        private void DrawFace(Face face, ref Bitmap bmp, Color color, bool perspective)
         {
+            double a, b, c, d;
             Point3D[] t = new Point3D[face.p.Length];
-            for (int i = 0; i < face.p.Length; i++)
+            if (perspective)
             {
-                t[i] = pointsToDraw[face.p[i]];
+                a = + pointsToDraw[face.p[0]].Y * pointsToDraw[face.p[1]].Z
+                    - pointsToDraw[face.p[0]].Y * pointsToDraw[face.p[2]].Z
+                    - pointsToDraw[face.p[1]].Y * pointsToDraw[face.p[0]].Z
+                    + pointsToDraw[face.p[2]].Y * pointsToDraw[face.p[0]].Z
+                    + pointsToDraw[face.p[1]].Y * pointsToDraw[face.p[2]].Z
+                    - pointsToDraw[face.p[2]].Y * pointsToDraw[face.p[1]].Z;
+
+                b = - pointsToDraw[face.p[0]].X * pointsToDraw[face.p[1]].Z
+                    + pointsToDraw[face.p[0]].X * pointsToDraw[face.p[2]].Z
+                    + pointsToDraw[face.p[1]].X * pointsToDraw[face.p[0]].Z
+                    - pointsToDraw[face.p[2]].X * pointsToDraw[face.p[0]].Z
+                    - pointsToDraw[face.p[1]].X * pointsToDraw[face.p[2]].Z
+                    + pointsToDraw[face.p[2]].X * pointsToDraw[face.p[1]].Z;
+
+                c = + pointsToDraw[face.p[0]].X * pointsToDraw[face.p[1]].Y
+                    - pointsToDraw[face.p[0]].X * pointsToDraw[face.p[2]].Y
+                    - pointsToDraw[face.p[1]].X * pointsToDraw[face.p[0]].Y
+                    + pointsToDraw[face.p[2]].X * pointsToDraw[face.p[0]].Y
+                    + pointsToDraw[face.p[1]].X * pointsToDraw[face.p[2]].Y
+                    - pointsToDraw[face.p[2]].X * pointsToDraw[face.p[1]].Y;
+
+                d = - pointsToDraw[face.p[0]].X * pointsToDraw[face.p[1]].Y * pointsToDraw[face.p[2]].Z
+                    + pointsToDraw[face.p[0]].X * pointsToDraw[face.p[2]].Y * pointsToDraw[face.p[1]].Z
+                    + pointsToDraw[face.p[1]].X * pointsToDraw[face.p[0]].Y * pointsToDraw[face.p[2]].Z
+                    - pointsToDraw[face.p[2]].X * pointsToDraw[face.p[0]].Y * pointsToDraw[face.p[1]].Z
+                    + pointsToDraw[face.p[1]].X * pointsToDraw[face.p[2]].Y * pointsToDraw[face.p[0]].Z
+                    + pointsToDraw[face.p[2]].X * pointsToDraw[face.p[1]].Y * pointsToDraw[face.p[0]].Z;
+                
+                for (int i = 0; i < face.p.Length; i++)
+                {
+                    float x = projPoints[face.p[i]].X;
+                    float y = projPoints[face.p[i]].Y;
+                    t[i] = new Point3D(x, y, -(a * x + b * y + d) / c);
+                }
             }
+            else
+                for (int i = 0; i < face.p.Length; i++)
+                    t[i] = pointsToDraw[face.p[i]];
+            
 
             if (t[0].Y == t[1].Y && t[0].Y == t[2].Y) return; // отсеиваем дегенеративные треугольники
             if (t[0].Y > t[1].Y) Swap(ref t[0], ref t[1]); //сортировка вершин треугольника
@@ -133,9 +177,9 @@ namespace WindowsFormsApp1
             for (int i = 0; i < total_height; i++) //построчное закрашивание треугольника
             {
                 bool second_half = i > t[1].Y - t[0].Y || t[1].Y == t[0].Y;
-                int segment_height = second_half ? (int)Math.Round(t[2].Y - t[1].Y) : (int)Math.Round(t[1].Y - t[0].Y);
-                float alpha = (float)i / total_height;
-                float beta = (float)(i - (second_half ? t[1].Y - t[0].Y : 0)) / segment_height; //тут может быть деление на 0
+                double segment_height = second_half ? (t[2].Y - t[1].Y) : (t[1].Y - t[0].Y);
+                double alpha = (double)i / total_height;
+                double beta = (i - (second_half ? t[1].Y - t[0].Y : 0)) / segment_height;
 
                 Point3D A = t[0] + (t[2] - t[0]) * alpha;
                 Point3D B = second_half ? t[1] + (t[2] - t[1]) * beta : t[0] + (t[1] - t[0]) * beta;
@@ -144,9 +188,9 @@ namespace WindowsFormsApp1
                     Swap(ref A, ref B);
                 try
                 {
-                    for (int j = (int)Math.Round(A.X); j <= Math.Round(B.X); j++)
+                    for (int j = (int)Math.Round(A.X); j <= (int)Math.Round(B.X); j++)
                     {
-                        float phi = B.X == A.X ? 1 : (float)(j - A.X) / (float)(B.X - A.X);
+                        double phi = B.X == A.X ? 1 : (j - A.X) / (B.X - A.X);
                         Point3D P = A + (B - A) * phi;
 
                         int newCoordX = (int)Math.Round(P.X + defTranslationX);
@@ -154,9 +198,9 @@ namespace WindowsFormsApp1
 
                         if (0 <= newCoordX && newCoordX < pb.Width &&
                             0 <= newCoordY && newCoordY < pb.Height)
-                            if (zbuffer[newCoordX, newCoordY] < P.Z)
+                            if (zbuffer[newCoordX, newCoordY] <= P.Z)
                             {
-                                zbuffer[newCoordX, newCoordY] = P.Z;
+                                zbuffer[newCoordX, newCoordY] = (int)P.Z;
                                 bmp.SetPixel(newCoordX, newCoordY, color);
                             }
                     }
@@ -193,14 +237,12 @@ namespace WindowsFormsApp1
         }*/
         public void ResizeBuffer()
         {
-            zbuffer = (double[,])ResizeArray(zbuffer, new int[] { pb.Width, pb.Height });
-
+            zbuffer = (int [,])ResizeArray(zbuffer, new int[] { pb.Width, pb.Height });
         }
         private static Array ResizeArray(Array arr, int[] newSizes)
         {
             if (newSizes.Length != arr.Rank)
-                throw new ArgumentException("arr must have the same number of dimensions " +
-                                            "as there are elements in newSizes", "newSizes");
+                throw new ArgumentException(@"Ошибка при изменении размера массива");
 
             var temp = Array.CreateInstance(arr.GetType().GetElementType(), newSizes);
             int length = arr.Length <= temp.Length ? arr.Length : temp.Length;
@@ -209,11 +251,9 @@ namespace WindowsFormsApp1
         }
         public void DrawPerspective()
         {
-
             resultTransformMatrix.Transform(pointsToDraw);
             Bitmap bmp = new Bitmap(pb.Width, pb.Height);
 
-            Graphics gr = Graphics.FromImage(bmp);
             // Получаем проекцию точек
             for (int i = 0; i < countPoints; i++)
             {
@@ -221,39 +261,51 @@ namespace WindowsFormsApp1
                 double xProj = focus / (focus + pointsToDraw[i].Z) * pointsToDraw[i].X;
                 double yProj = focus / (focus + pointsToDraw[i].Z) * pointsToDraw[i].Y;
 
-                // Применение смещения
-                xProj += defTranslationX;
-                yProj += defTranslationY;
-
                 // Запись в массив проекции
                 projPoints[i].X = (float)xProj;
                 projPoints[i].Y = (float)yProj;
-            }
+
+                //projPoints[i].X += defTranslationX;
+                //projPoints[i].Y += defTranslationY;
+            }                      
+
             for (int t = 0; t < pb.Width; t++)
                 for (int j = 0; j < pb.Height; j++)
-                    zbuffer[t, j] = Double.NegativeInfinity;
-            /*foreach (Face face in faces)
-            {
-                CheckFace(face);
-            }*/
-            //output();
+                    zbuffer[t, j] = int.MinValue;
 
-            // Рисуем ребра
-            for (int i = 0; i < countEdges; ++i)
-                gr.DrawLine(new Pen(Color.Red, 1),
-                    projPoints[edges[i].start].X, projPoints[edges[i].start].Y,
-                    projPoints[edges[i].end].X, projPoints[edges[i].end].Y);
 
-            for (int y = 0; y < pb.Width; y++)
+            if (name == @"Икосаэдр.txt")
             {
-                for (int z = 0; z < pb.Height; z++)
+                foreach (Face face in faces)
                 {
-                    if (zbuffer[y, z] != Double.NegativeInfinity)
-                        gr.DrawRectangle(new Pen(Color.Red, 1), y, z, 1, 1);
+                    Point3D[] t = new Point3D[face.p.Length];
+                    for (int i = 0; i < face.p.Length; i++)
+                    {
+                        t[i] = pointsToDraw[face.p[i]];
+                    }
+                    Vector3D n = Vector3D.CrossProduct((t[2] - t[0]), (t[1] - t[0]));
+                    n.Normalize();
+                    double intensity = Vector3D.DotProduct(n, light_dir);
+
+                    if (intensity > 0)
+                    {
+                        DrawFace(face, ref bmp, Color.FromArgb(255, (int)(intensity * 255), (int)(intensity * 255), (int)(intensity * 255)), true);
+                    }
                 }
+                Kostil(ref bmp);
             }
+            else
+            {
+                Graphics gr = Graphics.FromImage(bmp);
+                // Рисуем ребра
+                for (int i = 0; i < countEdges; ++i)
+                    gr.DrawLine(new Pen(Color.Red, 1),
+                        projPoints[edges[i].start].X + defTranslationX, projPoints[edges[i].start].Y + defTranslationY,
+                        projPoints[edges[i].end].X + defTranslationX, projPoints[edges[i].end].Y + defTranslationY);
+                gr.Dispose(); //освобождение памяти
+            }
+            
             pb.Image = bmp;
-            gr.Dispose(); //освобождение памяти
 
             points.CopyTo(pointsToDraw, 0);
             resultTransformMatrix = new Matrix3D();
@@ -264,35 +316,41 @@ namespace WindowsFormsApp1
             Bitmap bmp = new Bitmap(pb.Width, pb.Height);
             Graphics gr = Graphics.FromImage(bmp);
 
-
             for (int t = 0; t < pb.Width; t++)
                 for (int j = 0; j < pb.Height; j++)
-                    zbuffer[t, j] = Double.NegativeInfinity;
+                    zbuffer[t, j] = int.MinValue;
 
-            foreach (Face face in faces)
+            if(name == @"Икосаэдр.txt")
             {
-                Point3D[] t = new Point3D[face.p.Length];
-                for (int i = 0; i < face.p.Length; i++)
+                foreach (Face face in faces)
                 {
-                    t[i] = pointsToDraw[face.p[i]];
-                }
-                Vector3D n = Vector3D.CrossProduct((t[2] - t[0]), (t[1] - t[0]));
-                n.Normalize();
-                double intensity = Vector3D.DotProduct(n, light_dir);
+                    Point3D[] t = new Point3D[face.p.Length];
+                    for (int i = 0; i < face.p.Length; i++)
+                    {
+                        t[i] = pointsToDraw[face.p[i]];
+                    }
+                    Vector3D n = Vector3D.CrossProduct((t[2] - t[0]), (t[1] - t[0]));
+                    n.Normalize();
+                    double intensity = Vector3D.DotProduct(n, light_dir);
 
-                if (intensity > 0)
-                {
-                    DrawFace(face, ref bmp, Color.FromArgb(255, (int)(intensity * 255), (int)(intensity * 255), (int)(intensity * 255)));
+                    if (intensity > 0)
+                    {
+                        DrawFace(face, ref bmp, Color.FromArgb(255, (int)(intensity * 255), (int)(intensity * 255), (int)(intensity * 255)), false);
+                    }
                 }
+                Kostil(ref bmp);
             }
-
-            // Рисуем ребра
-            /*for (int i = 0; i < countEdges; ++i)
-                gr.DrawLine(new Pen(Color.Red, 1),
-                            (float)pointsToDraw[edges[i].start].X + (float)defTranslationX,
-                            (float)pointsToDraw[edges[i].start].Y + (float)defTranslationY,
-                            (float)pointsToDraw[edges[i].end].X + (float)defTranslationX,
-                            (float)pointsToDraw[edges[i].end].Y + (float)defTranslationY);*/
+            else
+            {
+                // Рисуем ребра
+                for (int i = 0; i < countEdges; ++i)
+                    gr.DrawLine(new Pen(Color.Red, 1),
+                                (float)pointsToDraw[edges[i].start].X + defTranslationX,
+                                (float)pointsToDraw[edges[i].start].Y + defTranslationY,
+                                (float)pointsToDraw[edges[i].end].X + defTranslationX,
+                                (float)pointsToDraw[edges[i].end].Y + defTranslationY);
+            }
+            
             pb.Image = bmp;
             gr.Dispose(); //освобождение памяти
 
@@ -360,6 +418,41 @@ namespace WindowsFormsApp1
             {
                 MessageBox.Show(e.Message);
                 Scale(0);
+            }
+        }
+
+        private void Kostil(ref Bitmap bmp)
+        {
+            int minX = int.MaxValue;
+            int maxX = int.MinValue;
+            int minY = int.MaxValue;
+            int maxY = int.MinValue;
+
+            foreach (PointF point in projPoints)
+            {
+                if (point.X < minX)
+                    minX = (int)point.X;
+                if (point.X > maxX)
+                    maxX = (int)point.X;
+                if (point.Y < minY)
+                    minY = (int)point.Y;
+                if (point.Y > maxY)
+                    maxY = (int)point.Y;
+            }
+            minX += defTranslationX;
+            maxX += defTranslationX;
+            minY += defTranslationY;
+            maxY += defTranslationY;
+
+            for (int i = minX <= 1 ? 1 : minX; i < maxX && i < pb.Width - 1; i++)
+            {
+                for (int j = minY <= 1 ? 1 : minY; j < maxY && j < pb.Height - 1; j++)
+                {
+                    if ((int.MinValue == zbuffer[i, j]) && (bmp.GetPixel(i, j - 1) == bmp.GetPixel(i, j + 1)))
+                    {
+                        bmp.SetPixel(i, j, bmp.GetPixel(i, j - 1));
+                    }
+                }
             }
         }
     }

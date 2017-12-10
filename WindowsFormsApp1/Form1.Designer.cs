@@ -328,7 +328,7 @@
             this.Controls.Add(this.pictureBox1);
             this.MinimumSize = new System.Drawing.Size(600, 524);
             this.Name = "Form1";
-            this.Text = "Программа - убийца памяти";
+            this.Text = "Программа - убийца компуктера";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.Resize += new System.EventHandler(this.Form1_Resize);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();

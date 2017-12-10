@@ -79,7 +79,7 @@ namespace WindowsFormsApp1
                 figure.DrawParallel();
             else
                 figure.DrawPerspective();
-            
+
         }
         private void trackBarTransfer_ValueChanged(object sender, EventArgs e)
         {
@@ -111,7 +111,7 @@ namespace WindowsFormsApp1
 
         private void checkBox1_CheckedChanged(object sender, EventArgs e)
         {
-            if(checkBox1.Checked)
+            if (checkBox1.Checked)
             {
                 trackBarValueXCentre = trackBarAngleX.Value;
                 trackBarValueYCentre = trackBarAngleY.Value;
@@ -129,14 +129,6 @@ namespace WindowsFormsApp1
                 trackBarAngleY.Value = trackBarValueYCentre;
                 trackBarAngleZ.Value = trackBarValueZCentre;
             }
-            /*trackBarMoveX.Value = 0;
-            trackBarMoveY.Value = 0;
-            trackBarMoveZ.Value = 0;*/
-            /*trackBarAngleX.Value = 0;
-            trackBarAngleY.Value = 0;
-            trackBarAngleZ.Value = 0;*/
-            figure.Scale(0);
-            //figure.DrawFigurePerspective();
         }
     }
 }
