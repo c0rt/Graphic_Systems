@@ -11,15 +11,12 @@ namespace WindowsFormsApp1
         public Form1()
         {
             InitializeComponent();
-            this.pictureBox1.MouseWheel += new MouseEventHandler(pictureBox1_MouseWheel);
+            pictureBox1.MouseWheel += new MouseEventHandler(pictureBox1_MouseWheel);
         }
         private void Form1_Load(object sender, EventArgs e)
         {
             figure = new Figure(pictureBox1);
-            if (comboBox1.Text == "Параллельная")
-                figure.DrawParallel();
-            else
-                figure.DrawPerspective();
+            figure.Draw(comboBox1.Text == "Центральная");
         }
         private void pictureBox1_MouseWheel(object sender, MouseEventArgs e)
         {
@@ -29,10 +26,7 @@ namespace WindowsFormsApp1
             figure.MoveFigure(trackBarMoveX.Value, trackBarMoveY.Value, trackBarMoveZ.Value);
             if (checkBox1.Checked)
                 figure.RotateFigure(trackBarAngleX.Value, trackBarAngleY.Value, trackBarAngleZ.Value);
-            if (comboBox1.Text == "Параллельная")
-                figure.DrawParallel();
-            else
-                figure.DrawPerspective();
+            figure.Draw(comboBox1.Text == "Центральная");
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
@@ -44,27 +38,19 @@ namespace WindowsFormsApp1
             trackBarAngleY.Value = 0;
             trackBarAngleZ.Value = 0;
             figure.Scale(0);
-            if (comboBox1.Text == "Параллельная")
-                figure.DrawParallel();
-            else
-                figure.DrawPerspective();
+            figure.Draw(comboBox1.Text == "Центральная");
         }
 
         private void Form1_Resize(object sender, EventArgs e)
         {
             figure.ResizeBuffer();
-            figure.defTranslationX = pictureBox1.Width / 2;
-            figure.defTranslationY = pictureBox1.Height / 2;
             if (!checkBox1.Checked)
                 figure.RotateFigure(trackBarAngleX.Value, trackBarAngleY.Value, trackBarAngleZ.Value);
             figure.Scale(0);
             figure.MoveFigure(trackBarMoveX.Value, trackBarMoveY.Value, trackBarMoveZ.Value);
             if (checkBox1.Checked)
                 figure.RotateFigure(trackBarAngleX.Value, trackBarAngleY.Value, trackBarAngleZ.Value);
-            if (comboBox1.Text == "Параллельная")
-                figure.DrawParallel();
-            else
-                figure.DrawPerspective();
+            figure.Draw(comboBox1.Text == "Центральная");
         }
 
         private void trackBarRotate_ValueChanged(object sender, EventArgs e)
@@ -75,11 +61,7 @@ namespace WindowsFormsApp1
             figure.MoveFigure(trackBarMoveX.Value, trackBarMoveY.Value, trackBarMoveZ.Value);
             if (checkBox1.Checked)
                 figure.RotateFigure(trackBarAngleX.Value, trackBarAngleY.Value, trackBarAngleZ.Value);
-            if (comboBox1.Text == "Параллельная")
-                figure.DrawParallel();
-            else
-                figure.DrawPerspective();
-
+            figure.Draw(comboBox1.Text == "Центральная");
         }
         private void trackBarTransfer_ValueChanged(object sender, EventArgs e)
         {
@@ -89,10 +71,7 @@ namespace WindowsFormsApp1
             figure.MoveFigure(trackBarMoveX.Value, trackBarMoveY.Value, trackBarMoveZ.Value);
             if (checkBox1.Checked)
                 figure.RotateFigure(trackBarAngleX.Value, trackBarAngleY.Value, trackBarAngleZ.Value);
-            if (comboBox1.Text == "Параллельная")
-                figure.DrawParallel();
-            else
-                figure.DrawPerspective();
+            figure.Draw(comboBox1.Text == "Центральная");
         }
         private void comboBox2_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -103,10 +82,7 @@ namespace WindowsFormsApp1
             trackBarAngleY.Value = 0;
             trackBarAngleZ.Value = 0;
             figure.ChangeFigure(comboBox2.Text);
-            if (comboBox1.Text == "Параллельная")
-                figure.DrawParallel();
-            else
-                figure.DrawPerspective();
+            figure.Draw(comboBox1.Text == "Центральная");
         }
 
         private void checkBox1_CheckedChanged(object sender, EventArgs e)

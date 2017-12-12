@@ -19,7 +19,8 @@ namespace WindowsFormsApp1
             public int[] p;
         };
 
-        private Vector3D light_dir = new Vector3D(0, 0, 1);
+        //направление источника света
+        private Vector3D light_dir = new Vector3D(0, 0, 1); 
 
         private StreamReader reader;
         private int countPoints, countEdges, countFaces;
@@ -32,8 +33,8 @@ namespace WindowsFormsApp1
 
         private const double focus = 2000;
         private const double minScale = 0.1;
-        public int defTranslationX, defTranslationY;
-        public double scale;
+        private int defTranslationX, defTranslationY;
+        private double scale;
         private PictureBox pb;
 
         private int[,] zbuffer;
@@ -128,6 +129,7 @@ namespace WindowsFormsApp1
             Point3D[] t = new Point3D[face.p.Length];
             if (perspective)
             {
+                //коэффициенты уравнения плоскости текущей грани
                 a = + pointsToDraw[face.p[0]].Y * pointsToDraw[face.p[1]].Z
                     - pointsToDraw[face.p[0]].Y * pointsToDraw[face.p[2]].Z
                     - pointsToDraw[face.p[1]].Y * pointsToDraw[face.p[0]].Z
@@ -200,6 +202,7 @@ namespace WindowsFormsApp1
                             0 <= newCoordY && newCoordY < pb.Height)
                             if (zbuffer[newCoordX, newCoordY] <= P.Z)
                             {
+                                //заполнение буфера и вывод картинки в буфер
                                 zbuffer[newCoordX, newCoordY] = (int)P.Z;
                                 bmp.SetPixel(newCoordX, newCoordY, color);
                             }
@@ -211,151 +214,99 @@ namespace WindowsFormsApp1
                 }
             }
         }
-        static void Swap<T>(ref T lhs, ref T rhs)
+        private static void Swap<T>(ref T lhs, ref T rhs)
         {
             T temp;
             temp = lhs;
             lhs = rhs;
             rhs = temp;
         }
-        /*private void output()
-        {
-            String str;
-            using (StreamWriter outputFile = new StreamWriter(@"WriteLines.txt"))
-            {
-                for (int y = 0; y < pb.Height; y++)
-                {
-                    for (int z = 0; z < pb.Width; z++)
-                    {
-                        str = ((int)zbuffer[y, z]).ToString() + " ";
-                        outputFile.Write(str);
-                    }
-                    outputFile.WriteLine();
-                }
-                outputFile.Close();
-            }
-        }*/
         public void ResizeBuffer()
         {
+            defTranslationX = pb.Width/2;
+            defTranslationY = pb.Height/2;
             zbuffer = (int [,])ResizeArray(zbuffer, new int[] { pb.Width, pb.Height });
         }
         private static Array ResizeArray(Array arr, int[] newSizes)
         {
             if (newSizes.Length != arr.Rank)
-                throw new ArgumentException(@"Ошибка при изменении размера массива");
+                MessageBox.Show(@"Ошибка при изменении размера массива");
 
             var temp = Array.CreateInstance(arr.GetType().GetElementType(), newSizes);
             int length = arr.Length <= temp.Length ? arr.Length : temp.Length;
             Array.ConstrainedCopy(arr, 0, temp, 0, length);
             return temp;
         }
-        public void DrawPerspective()
+        public void Draw(bool perspective)
         {
             resultTransformMatrix.Transform(pointsToDraw);
             Bitmap bmp = new Bitmap(pb.Width, pb.Height);
 
-            // Получаем проекцию точек
-            for (int i = 0; i < countPoints; i++)
+            if (perspective)
             {
-                // Получение координат проекции
-                double xProj = focus / (focus + pointsToDraw[i].Z) * pointsToDraw[i].X;
-                double yProj = focus / (focus + pointsToDraw[i].Z) * pointsToDraw[i].Y;
-
-                // Запись в массив проекции
-                projPoints[i].X = (float)xProj;
-                projPoints[i].Y = (float)yProj;
-
-                //projPoints[i].X += defTranslationX;
-                //projPoints[i].Y += defTranslationY;
-            }                      
-
-            for (int t = 0; t < pb.Width; t++)
-                for (int j = 0; j < pb.Height; j++)
-                    zbuffer[t, j] = int.MinValue;
-
+                // Получаем проекцию точек
+                for (int i = 0; i < countPoints; i++)
+                {
+                    // Получение координат проекции
+                    projPoints[i].X = (float)(focus / (focus + pointsToDraw[i].Z) * pointsToDraw[i].X);
+                    projPoints[i].Y = (float)(focus / (focus + pointsToDraw[i].Z) * pointsToDraw[i].Y);
+                }
+            }
 
             if (name == @"Икосаэдр.txt")
             {
-                foreach (Face face in faces)
-                {
-                    Point3D[] t = new Point3D[face.p.Length];
-                    for (int i = 0; i < face.p.Length; i++)
-                    {
-                        t[i] = pointsToDraw[face.p[i]];
-                    }
-                    Vector3D n = Vector3D.CrossProduct((t[2] - t[0]), (t[1] - t[0]));
-                    n.Normalize();
-                    double intensity = Vector3D.DotProduct(n, light_dir);
-
-                    if (intensity > 0)
-                    {
-                        DrawFace(face, ref bmp, Color.FromArgb(255, (int)(intensity * 255), (int)(intensity * 255), (int)(intensity * 255)), true);
-                    }
-                }
-                Kostil(ref bmp);
+                DrawIcosaedr(ref bmp, perspective);
             }
             else
             {
                 Graphics gr = Graphics.FromImage(bmp);
                 // Рисуем ребра
-                for (int i = 0; i < countEdges; ++i)
-                    gr.DrawLine(new Pen(Color.Red, 1),
-                        projPoints[edges[i].start].X + defTranslationX, projPoints[edges[i].start].Y + defTranslationY,
-                        projPoints[edges[i].end].X + defTranslationX, projPoints[edges[i].end].Y + defTranslationY);
+                if(perspective)
+                    for (int i = 0; i < countEdges; ++i)
+                        gr.DrawLine(new Pen(Color.Red, 1),
+                            projPoints[edges[i].start].X + defTranslationX,
+                            projPoints[edges[i].start].Y + defTranslationY,
+                            projPoints[edges[i].end].X + defTranslationX,
+                            projPoints[edges[i].end].Y + defTranslationY);
+                else
+                    for (int i = 0; i < countEdges; ++i)
+                        gr.DrawLine(new Pen(Color.Red, 1),
+                            (float)pointsToDraw[edges[i].start].X + defTranslationX,
+                            (float)pointsToDraw[edges[i].start].Y + defTranslationY,
+                            (float)pointsToDraw[edges[i].end].X + defTranslationX,
+                            (float)pointsToDraw[edges[i].end].Y + defTranslationY);
                 gr.Dispose(); //освобождение памяти
             }
-            
+
             pb.Image = bmp;
 
             points.CopyTo(pointsToDraw, 0);
             resultTransformMatrix = new Matrix3D();
         }
-        public void DrawParallel()
+        private void DrawIcosaedr(ref Bitmap bmp, bool perspective)
         {
-            resultTransformMatrix.Transform(pointsToDraw);
-            Bitmap bmp = new Bitmap(pb.Width, pb.Height);
-            Graphics gr = Graphics.FromImage(bmp);
-
             for (int t = 0; t < pb.Width; t++)
                 for (int j = 0; j < pb.Height; j++)
                     zbuffer[t, j] = int.MinValue;
-
-            if(name == @"Икосаэдр.txt")
+            foreach (Face face in faces)
             {
-                foreach (Face face in faces)
+                //находим угол меджу гранью и источником света
+                Point3D[] t = new Point3D[face.p.Length];
+                for (int i = 0; i < face.p.Length; i++)
                 {
-                    Point3D[] t = new Point3D[face.p.Length];
-                    for (int i = 0; i < face.p.Length; i++)
-                    {
-                        t[i] = pointsToDraw[face.p[i]];
-                    }
-                    Vector3D n = Vector3D.CrossProduct((t[2] - t[0]), (t[1] - t[0]));
-                    n.Normalize();
-                    double intensity = Vector3D.DotProduct(n, light_dir);
-
-                    if (intensity > 0)
-                    {
-                        DrawFace(face, ref bmp, Color.FromArgb(255, (int)(intensity * 255), (int)(intensity * 255), (int)(intensity * 255)), false);
-                    }
+                    t[i] = pointsToDraw[face.p[i]];
                 }
-                Kostil(ref bmp);
-            }
-            else
-            {
-                // Рисуем ребра
-                for (int i = 0; i < countEdges; ++i)
-                    gr.DrawLine(new Pen(Color.Red, 1),
-                                (float)pointsToDraw[edges[i].start].X + defTranslationX,
-                                (float)pointsToDraw[edges[i].start].Y + defTranslationY,
-                                (float)pointsToDraw[edges[i].end].X + defTranslationX,
-                                (float)pointsToDraw[edges[i].end].Y + defTranslationY);
-            }
-            
-            pb.Image = bmp;
-            gr.Dispose(); //освобождение памяти
+                Vector3D n = Vector3D.CrossProduct((t[2] - t[0]), (t[1] - t[0]));
+                n.Normalize();
+                //используем этот угол для цвета
+                double intensity = Vector3D.DotProduct(n, light_dir);
 
-            points.CopyTo(pointsToDraw, 0);
-            resultTransformMatrix = new Matrix3D();
+                if (intensity > 0)
+                {
+                    DrawFace(face, ref bmp, Color.FromArgb(255, (int)(intensity * 255), (int)(intensity * 255), (int)(intensity * 255)), perspective);
+                }
+            }
+            Kostil(ref bmp);
         }
         public void RotateFigure(double angleX, double angleY, double angleZ)
         {
