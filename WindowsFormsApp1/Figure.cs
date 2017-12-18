@@ -310,7 +310,6 @@ namespace WindowsFormsApp1
 
                 if (intensity > 0.5)
                 {
-                    intensity = Math.Abs(intensity);
                     DrawFace(face, ref bmp, Color.FromArgb(255, (int)(intensity * 255), (int)(intensity * 255), (int)(intensity * 255)), perspective);
                 }
             }
