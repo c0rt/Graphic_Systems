@@ -37,7 +37,8 @@ namespace WindowsFormsApp1
         private double scale;
         private PictureBox pb;
 
-        private int[,] zbuffer;
+        private int[,] zBuffer;
+        private Color[,] colorBuffer;
 
         private Matrix3D resultTransformMatrix;
 
@@ -53,15 +54,20 @@ namespace WindowsFormsApp1
                 name = @"Икосаэдр.txt";
                 ReadFromFile(name);
 
-                scale = 100;
+                scale = 80;
                 resultTransformMatrix = new Matrix3D();
                 points.CopyTo(pointsToDraw, 0);
                 Scale(0);
 
-                zbuffer = new int[pb.Width, pb.Height];
+                zBuffer = new int[pb.Width, pb.Height];
+                colorBuffer = new Color[pb.Width, pb.Height];
                 for (int i = 0; i < pb.Width; i++)
                     for (int j = 0; j < pb.Height; j++)
-                        zbuffer[i, j] = int.MinValue;
+                    {
+                        zBuffer[i, j] = int.MinValue;
+                        colorBuffer[i, j] = Color.Transparent;
+                    }
+            
             }
             catch (Exception e)
             {
@@ -200,11 +206,11 @@ namespace WindowsFormsApp1
 
                         if (0 <= newCoordX && newCoordX < pb.Width &&
                             0 <= newCoordY && newCoordY < pb.Height)
-                            if (zbuffer[newCoordX, newCoordY] <= P.Z)
+                            if (zBuffer[newCoordX, newCoordY] <= P.Z)
                             {
                                 //заполнение буфера и вывод картинки в буфер
-                                zbuffer[newCoordX, newCoordY] = (int)P.Z;
-                                bmp.SetPixel(newCoordX, newCoordY, color);
+                                zBuffer[newCoordX, newCoordY] = (int)P.Z;
+                                colorBuffer[newCoordX, newCoordY] = color;
                             }
                     }
                 }
@@ -225,7 +231,8 @@ namespace WindowsFormsApp1
         {
             defTranslationX = pb.Width/2;
             defTranslationY = pb.Height/2;
-            zbuffer = (int [,])ResizeArray(zbuffer, new int[] { pb.Width, pb.Height });
+            zBuffer = (int [,])ResizeArray(zBuffer, new int[] { pb.Width, pb.Height });
+            colorBuffer = (Color[,])ResizeArray(colorBuffer, new int[] { pb.Width, pb.Height });
         }
         private static Array ResizeArray(Array arr, int[] newSizes)
         {
@@ -287,7 +294,7 @@ namespace WindowsFormsApp1
         {
             for (int t = 0; t < pb.Width; t++)
                 for (int j = 0; j < pb.Height; j++)
-                    zbuffer[t, j] = int.MinValue;
+                    zBuffer[t, j] = int.MinValue;
             foreach (Face face in faces)
             {
                 //находим угол меджу гранью и источником света
@@ -296,16 +303,21 @@ namespace WindowsFormsApp1
                 {
                     t[i] = pointsToDraw[face.p[i]];
                 }
-                Vector3D n = Vector3D.CrossProduct((t[2] - t[0]), (t[1] - t[0]));
+                Vector3D n = Vector3D.CrossProduct((t[1] - t[0]), (t[2] - t[0]));
                 n.Normalize();
                 //используем этот угол для цвета
-                double intensity = Vector3D.DotProduct(n, light_dir);
+                double intensity = Vector3D.DotProduct(n, light_dir) / 2 + 0.5;
 
-                if (intensity > 0)
+                if (intensity > 0.5)
                 {
+                    intensity = Math.Abs(intensity);
                     DrawFace(face, ref bmp, Color.FromArgb(255, (int)(intensity * 255), (int)(intensity * 255), (int)(intensity * 255)), perspective);
                 }
             }
+            for (int i = 0; i < pb.Width; i++)
+                for(int j = 0; j < pb.Height; j++)
+                    if(zBuffer[i, j] > int.MinValue)
+                        bmp.SetPixel(i, j, colorBuffer[i, j]);
             Kostil(ref bmp);
         }
         public void RotateFigure(double angleX, double angleY, double angleZ)
@@ -399,7 +411,7 @@ namespace WindowsFormsApp1
             {
                 for (int j = minY <= 1 ? 1 : minY; j < maxY && j < pb.Height - 1; j++)
                 {
-                    if ((int.MinValue == zbuffer[i, j]) && (bmp.GetPixel(i, j - 1) == bmp.GetPixel(i, j + 1)))
+                    if ((int.MinValue == zBuffer[i, j]) && (bmp.GetPixel(i, j - 1) == bmp.GetPixel(i, j + 1)))
                     {
                         bmp.SetPixel(i, j, bmp.GetPixel(i, j - 1));
                     }
