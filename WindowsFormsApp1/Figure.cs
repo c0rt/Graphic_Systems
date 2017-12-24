@@ -9,56 +9,63 @@ namespace WindowsFormsApp1
 {
     public class Figure
     {
+        // Структура ребра (номер начальной точки и конечной)
         private struct Edge
         {
             public int start, end;
         };
 
+        // Структура грани (три образующих точки)
         private struct Face
         {
             public int[] p;
         };
 
-        //направление источника света
-        private Vector3D light_dir = new Vector3D(0, 0, 1); 
+        private Vector3D light_dir = new Vector3D(0, 0, 1); // Вектор источника света
 
-        private StreamReader reader;
-        private int countPoints, countEdges, countFaces;
-        private Point3D[] points, pointsToDraw;
-        private PointF[] projPoints;
-        private Edge[] edges;
-        private Face[] faces;
+        private StreamReader reader;                        // Поток ввода
+        private int countPoints, countEdges, countFaces;    // Счетчики точек, ребер, граней 
+        private Point3D[] points, pointsToDraw;             // Массивы трехмерных точек
+        private PointF[] projPoints;                        // Массив проекций трехмерных точек на плоскость экрана
+        private Edge[] edges;                               // Массив ребер
+        private Face[] faces;                               // Массив граней
 
-        private String name;
+        private String name;                                // Название файла
 
-        private const double focus = 2000;
-        private const double minScale = 0.1;
-        private int defTranslationX, defTranslationY;
-        private double scale;
-        private PictureBox pb;
+        private const double focus = 2000;                  // Фокусное расстояние
+        private const double minScale = 0.1;                // Минимальный масштаб
+        private int defTranslationX, defTranslationY;       // Смещение относительно начала координат экрана
+        private double scale;                               // Масштаб
+        private PictureBox pb;                              // Область Picture Box для отрисовки
 
-        private int[,] zBuffer;
-        private Color[,] colorBuffer;
+        private int[,] zBuffer;                             // Массив z-буфера
+        private Color[,] colorBuffer;                       // Массив цветового буфера
 
-        private Matrix3D resultTransformMatrix;
+        private Matrix3D resultTransformMatrix;             // Итоговая матрица преобразований
 
-        public Figure(PictureBox newPicBox)
+        public Figure(PictureBox newPicBox) // Инициализация
         {
             try
             {
+                // Инициализция Picture Box
                 pb = newPicBox;
 
-                defTranslationX = pb.Width / 2;
+                // Вычисление смещения
+                defTranslationX = pb.Width / 2;                   
                 defTranslationY = pb.Height / 2;
 
+                // Считывание названия начальной фигуры
                 name = @"Икосаэдр.txt";
                 ReadFromFile(name);
 
+                // Инициализация масштаба, результирующей матрицы
                 scale = 80;
                 resultTransformMatrix = new Matrix3D();
                 points.CopyTo(pointsToDraw, 0);
                 Scale(0);
 
+                // Инициализация zBuffer минимально возможными значениями
+                // и colorBuffer прозрачными цветами
                 zBuffer = new int[pb.Width, pb.Height];
                 colorBuffer = new Color[pb.Width, pb.Height];
                 for (int i = 0; i < pb.Width; i++)
@@ -74,10 +81,11 @@ namespace WindowsFormsApp1
                 MessageBox.Show(e.Message);
             }
         }
-        private void ReadFromFile(String figure)
+        private void ReadFromFile(String figure) // Чтение из файла
         {
             try
             {
+                // Инциализация переменных чтения из файла
                 name = figure;
                 reader = new StreamReader(figure);
                 countPoints = int.Parse(reader.ReadLine());
@@ -85,6 +93,7 @@ namespace WindowsFormsApp1
                 pointsToDraw = new Point3D[countPoints];
                 projPoints = new PointF[countPoints];
 
+                // Считывание координат точек
                 int i = 0;
                 while (i != countPoints)
                 {
@@ -96,6 +105,8 @@ namespace WindowsFormsApp1
                     i++;
                 }
                 i = 0;
+
+                // Считывание структур ребер
                 countEdges = int.Parse(reader.ReadLine());
                 edges = new Edge[countEdges];
                 while (i != countEdges)
@@ -106,6 +117,8 @@ namespace WindowsFormsApp1
                     edges[i].end = (int)tempVals[1];
                     i++;
                 }
+
+                // Считывание граней (для икосаэдра)
                 if(name == @"Икосаэдр.txt")
                 {
                     i = 0;
@@ -129,13 +142,14 @@ namespace WindowsFormsApp1
                 MessageBox.Show(e.Message);
             }
         }
-        private void DrawFace(Face face, ref Bitmap bmp, Color color, bool perspective)
+        private void DrawFace(Face face, ref Bitmap bmp, Color color, bool perspective) // Расчет отдельной грани 
         {
             double a, b, c, d;
             Point3D[] t = new Point3D[face.p.Length];
             if (perspective)
             {
-                //коэффициенты уравнения плоскости текущей грани
+                // Коэффициенты уравнения плоскости текущей грани
+                // выведенные из уравнения плоскости Ax + By + Cy + D = 0
                 a = + pointsToDraw[face.p[0]].Y * pointsToDraw[face.p[1]].Z
                     - pointsToDraw[face.p[0]].Y * pointsToDraw[face.p[2]].Z
                     - pointsToDraw[face.p[1]].Y * pointsToDraw[face.p[0]].Z
@@ -164,6 +178,7 @@ namespace WindowsFormsApp1
                     + pointsToDraw[face.p[1]].X * pointsToDraw[face.p[2]].Y * pointsToDraw[face.p[0]].Z
                     + pointsToDraw[face.p[2]].X * pointsToDraw[face.p[1]].Y * pointsToDraw[face.p[0]].Z;
                 
+                // Вычисление z
                 for (int i = 0; i < face.p.Length; i++)
                 {
                     float x = projPoints[face.p[i]].X;
@@ -175,14 +190,15 @@ namespace WindowsFormsApp1
                 for (int i = 0; i < face.p.Length; i++)
                     t[i] = pointsToDraw[face.p[i]];
             
-
-            if (t[0].Y == t[1].Y && t[0].Y == t[2].Y) return; // отсеиваем дегенеративные треугольники
-            if (t[0].Y > t[1].Y) Swap(ref t[0], ref t[1]); //сортировка вершин треугольника
+            // Алгоритм закраски треуголника со второго семестра (Комп. графкика)
+            if (t[0].Y == t[1].Y && t[0].Y == t[2].Y) return; // Отсеиваем дегенеративные треугольники (с вершинами, лежащими на одной прямой)
+             if (t[0].Y > t[1].Y) Swap(ref t[0], ref t[1]); // Сортировка вершин треугольника
             if (t[0].Y > t[2].Y) Swap(ref t[0], ref t[2]);
             if (t[1].Y > t[2].Y) Swap(ref t[1], ref t[2]);
 
             int total_height = (int)(t[2].Y - t[0].Y);
-            for (int i = 0; i < total_height; i++) //построчное закрашивание треугольника
+            // Построчное закрашивание треугольника
+            for (int i = 0; i < total_height; i++) 
             {
                 bool second_half = i > t[1].Y - t[0].Y || t[1].Y == t[0].Y;
                 double segment_height = second_half ? (t[2].Y - t[1].Y) : (t[1].Y - t[0].Y);
@@ -208,7 +224,7 @@ namespace WindowsFormsApp1
                             0 <= newCoordY && newCoordY < pb.Height)
                             if (zBuffer[newCoordX, newCoordY] <= P.Z)
                             {
-                                //заполнение буфера и вывод картинки в буфер
+                                // Заполнение буфера и вывод картинки в буфер
                                 zBuffer[newCoordX, newCoordY] = (int)P.Z;
                                 colorBuffer[newCoordX, newCoordY] = color;
                             }
@@ -220,21 +236,21 @@ namespace WindowsFormsApp1
                 }
             }
         }
-        private static void Swap<T>(ref T lhs, ref T rhs)
+        private static void Swap<T>(ref T lhs, ref T rhs) // Swap значений
         {
             T temp;
             temp = lhs;
             lhs = rhs;
             rhs = temp;
         }
-        public void ResizeBuffer()
+        public void ResizeBuffer() // Ресайз буферов и смещений при ресайзе формы
         {
             defTranslationX = pb.Width/2;
             defTranslationY = pb.Height/2;
             zBuffer = (int [,])ResizeArray(zBuffer, new int[] { pb.Width, pb.Height });
             colorBuffer = (Color[,])ResizeArray(colorBuffer, new int[] { pb.Width, pb.Height });
         }
-        private static Array ResizeArray(Array arr, int[] newSizes)
+        private static Array ResizeArray(Array arr, int[] newSizes) // Функция ресайза массива
         {
             if (newSizes.Length != arr.Rank)
                 MessageBox.Show(@"Ошибка при изменении размера массива");
@@ -244,7 +260,7 @@ namespace WindowsFormsApp1
             Array.ConstrainedCopy(arr, 0, temp, 0, length);
             return temp;
         }
-        public void Draw(bool perspective)
+        public void Draw(bool perspective) // Функция отрисовки
         {
             resultTransformMatrix.Transform(pointsToDraw);
             Bitmap bmp = new Bitmap(pb.Width, pb.Height);
@@ -297,7 +313,7 @@ namespace WindowsFormsApp1
                     zBuffer[t, j] = int.MinValue;
             foreach (Face face in faces)
             {
-                //находим угол меджу гранью и источником света
+                // Находим угол меджу гранью и источником света
                 Point3D[] t = new Point3D[face.p.Length];
                 for (int i = 0; i < face.p.Length; i++)
                 {
@@ -305,7 +321,8 @@ namespace WindowsFormsApp1
                 }
                 Vector3D n = Vector3D.CrossProduct((t[1] - t[0]), (t[2] - t[0]));
                 n.Normalize();
-                //используем этот угол для цвета
+
+                // Используем этот угол для цвета
                 double intensity = Vector3D.DotProduct(n, light_dir) / 2 + 0.5;
 
                 if (intensity > 0.5)
@@ -313,17 +330,21 @@ namespace WindowsFormsApp1
                     DrawFace(face, ref bmp, Color.FromArgb(255, (int)(intensity * 255), (int)(intensity * 255), (int)(intensity * 255)), perspective);
                 }
             }
+            // Покраска пикселей
             for (int i = 0; i < pb.Width; i++)
                 for(int j = 0; j < pb.Height; j++)
                     if(zBuffer[i, j] > int.MinValue)
                         bmp.SetPixel(i, j, colorBuffer[i, j]);
             Kostil(ref bmp);
         }
-        public void RotateFigure(double angleX, double angleY, double angleZ)
+        public void RotateFigure(double angleX, double angleY, double angleZ) // Матричные преобразования вращения
         {
+            // Перевод в радианы
             angleX *= Math.PI / 180;
             angleY *= Math.PI / 180;
             angleZ *= Math.PI / 180;
+            
+            //Инициализция матриц вращения
             Matrix3D RotateXMatrix = new Matrix3D(1, 0, 0, 0,
                                                   0, Math.Cos(angleX), -Math.Sin(angleX), 0,
                                                   0, Math.Sin(angleX), Math.Cos(angleX), 0,
@@ -336,36 +357,43 @@ namespace WindowsFormsApp1
                                                   Math.Sin(angleZ), Math.Cos(angleZ), 0, 0,
                                                   0, 0, 1, 0,
                                                   0, 0, 0, 1);
+
+            // Векторное умножение на итоговую матрицу
             resultTransformMatrix = Matrix3D.Multiply(resultTransformMatrix, RotateXMatrix);
             resultTransformMatrix = Matrix3D.Multiply(resultTransformMatrix, RotateYMatrix);
             resultTransformMatrix = Matrix3D.Multiply(resultTransformMatrix, RotateZMatrix);
         }
-        public void Scale(int approximation)
+        public void Scale(int approximation) // Функция масштабирования
         {
             //Применяем масштаб
             if (approximation != 0)
-            {
+            {   
                 if (approximation > 0)
                     scale *= 1.111111;
                 else
                 if (scale > minScale)
                     scale /= 1.111111;
             }
+
+            // Матрица масштабирования
             Matrix3D ScaleMatrix3D = new Matrix3D(scale, 0, 0, 0,
                                                   0, scale, 0, 0,
                                                   0, 0, scale, 0,
                                                   0, 0, 0, 1);
+            // Векторное умножение на итоговую матрицу
             resultTransformMatrix = Matrix3D.Multiply(resultTransformMatrix, ScaleMatrix3D);
         }
-        public void MoveFigure(double translationX, double translationY, double translationZ)
+        public void MoveFigure(double translationX, double translationY, double translationZ) // Смещение фигуры
         {
+            // Инициализация матрицы смещения
             Matrix3D TranslateMatrix3D = new Matrix3D(1, 0, 0, 0,
                                                       0, 1, 0, 0,
                                                       0, 0, 1, 0,
                                                       translationX, translationY, translationZ, 1);
+            // Векторное умножение на итоговую матрицу
             resultTransformMatrix = Matrix3D.Multiply(resultTransformMatrix, TranslateMatrix3D);
         }
-        public void ChangeFigure(String nameFigure)
+        public void ChangeFigure(String nameFigure) // Смена фигуры и обнуление данных
         {
             try
             {
@@ -383,13 +411,14 @@ namespace WindowsFormsApp1
             }
         }
 
-        private void Kostil(ref Bitmap bmp)
-        {
+        private void Kostil(ref Bitmap bmp) // Костыль для итоговой отрисовки (закрашивает косяки)
+        {                                   // (Закомментируйте его вызов чтобы оценить разницу)
             int minX = int.MaxValue;
             int maxX = int.MinValue;
             int minY = int.MaxValue;
             int maxY = int.MinValue;
 
+            // Вычисление обрабатываемой области
             foreach (PointF point in projPoints)
             {
                 if (point.X < minX)
@@ -406,6 +435,7 @@ namespace WindowsFormsApp1
             minY += defTranslationY;
             maxY += defTranslationY;
 
+            // Покраска проблемных точек в цвета его соседей
             for (int i = minX <= 1 ? 1 : minX; i < maxX && i < pb.Width - 1; i++)
             {
                 for (int j = minY <= 1 ? 1 : minY; j < maxY && j < pb.Height - 1; j++)
